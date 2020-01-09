@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="css/jquery.orgchart.css">
+</head>
+<body>
+  <div id="chart-container"></div>
+
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/jquery.orgchart.js"></script>
+  <script type="text/javascript">
+
+    $(function() {
+
+        var items = [ 
+            {"Id": "1", "Name": "abc", "Parent": "2"}, 
+            {"Id": "3", "Name": "abc", "Parent": "5"}, 
+            {"Id": "4", "Name": "abc", "Parent": "2"}, 
+            {"Id": "6", "Name": "abc", "Parent": "2"}, 
+            {"Id": "7", "Name": "abc", "Parent": "6"}, 
+            {"Id": "8", "Name": "abc", "Parent": "6"} 
+        ];
+
+        function unflatten(items) {
+        var tree = [],
+            mappedArr = {}
+            
+        // Build a hash table and map items to objects
+        items.forEach(function(item) {
+            var id = item.Id;
+            mappedArr[id] = item; // the extracted id as key, and the item as value
+            mappedArr[id].children = [];  // under each item, add a key "children" with an empty array as value
+        })
+        
+        // If root-level nodes are not included in hash table, include them
+        items.forEach(function(item) {
+            var parent_id = item.Parent;
+            if (!mappedArr.hasOwnProperty(parent_id)) {
+            // make up an item for root-level node
+            newItem = {};
+            newItem.Id = parent_id;
+            newItem.Name = 'abc';
+            newItem.Parent = '';
+            mappedArr[parent_id] = newItem; // the parent id as key, and made-up an item as value
+            mappedArr[parent_id].children = []; 
+            }
+        })
+        
+        // Loop over hash table
+        for (var id in mappedArr) { 
+            if (mappedArr.hasOwnProperty(id)) {
+            mappedElem = mappedArr[id];
+            
+            // If the element is not at the root level, add it to its parent array of children. Note this will continue till we have only root level elements left
+            if (mappedElem.Parent) { 
+                var parent_id = mappedElem.Parent;
+                mappedArr[parent_id].children.push(mappedElem); 
+            }
+            
+            // If the element is at the root level, directly push to the tree
+            else { 
+                tree.push(mappedElem);
+            } 
+            }
+        }
+        
+        return tree;
+        
+        }
+
+        var result = unflatten(items);
+
+        // dabeng org chart supports one root node so I add "mychart" to be my only root node
+        datasource = {};
+        datasource.Id = "mychart";
+        datasource.Name = '';
+        datasource.children = result;
+
+
+        var nodeTemplate = function(data) {
+            return `
+                <div class="title">${data.Id}</div>
+                <div class="content">${data.Name}</div>
+            `;
+            };
+
+        $('#chart-container').orgchart({
+            'data' : datasource,
+            'nodeContent': 'title',
+            'nodeTemplate': nodeTemplate
+        });
+
+    });
+  </script>
+  </body>
+</html>
